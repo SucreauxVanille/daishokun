@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>大小君</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+    button { font-size: 2em; margin: 1em; padding: 1em 2em; }
+    #result, #timer { font-size: 1.5em; margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>どちらが大きい？</h1>
+  <div id="question"></div>
+  <button id="btn1"></button>
+  <button id="btn2"></button>
+  <div id="timer"></div>
+  <div id="result"></div>
+
+  <script>
+    let m, n;
+    let correctAnswer;
+    let timeoutId;
+
+    function generateM() {
+      const a = Math.floor(Math.random() * 99) + 2; // 2〜100
+      const b = Math.floor(Math.random() * (a - 1)) + 1; // 1〜a-1
+
+      const ops = [
+        { op: '+', value: a + b, expr: `${a} + ${b}` },
+        { op: '-', value: a - b, expr: `${a} - ${b}` },
+        { op: '×', value: a * b, expr: `${a} × ${b}` },
+        { op: '÷', value: Math.floor(a / b), expr: `${a} ÷ ${b}` }
+      ];
+
+      let validOps = ops.filter(o => o.value > 1 && o.value <= 1000);
+      const choice = validOps[Math.floor(Math.random() * validOps.length)];
+      return { value: choice.value, text: choice.expr };
+    }
+
+    function generateN() {
+      const x = Math.floor(Math.random() * 10) + 1;
+      return { value: 100 * x, text: `${100 * x}` };
+    }
+
+function startQuestion() {
+  document.getElementById("result").textContent = "";
+  const maxAttempts = 100;
+  let attempts = 0;
+  let mObj, nObj;
+
+  while (attempts < maxAttempts) {
+    mObj = generateM();
+    nObj = generateN();
+    if (Math.abs(mObj.value - nObj.value) < 100 && mObj.value !== nObj.value) {
+      break;
+    }
+    attempts++;
+  }
+
+  if (attempts >= maxAttempts) {
+    document.getElementById("question").textContent = "";
+    document.getElementById("btn1").style.display = "none";
+    document.getElementById("btn2").style.display = "none";
+    document.getElementById("timer").textContent = "";
+    document.getElementById("result").innerHTML = "問題の生成に失敗しました。<br>ページを再読み込みしてください。";
+    return;
+  }
+
+  m = mObj.value;
+  n = nObj.value;
+
+  const leftIsM = Math.random() < 0.5;
+  const btn1 = document.getElementById("btn1");
+  const btn2 = document.getElementById("btn2");
+
+  btn1.style.display = "inline-block";
+  btn2.style.display = "inline-block";
+  btn1.textContent = leftIsM ? mObj.text : nObj.text;
+  btn2.textContent = leftIsM ? nObj.text : mObj.text;
+
+  correctAnswer = m > n ? (leftIsM ? "btn1" : "btn2") : (leftIsM ? "btn2" : "btn1");
+
+  startTimer();
+}
+
+    function startTimer() {
+      let timeLeft = 10;
+      const timer = document.getElementById("timer");
+      timer.textContent = `残り時間: ${timeLeft}秒`;
+
+      timeoutId = setInterval(() => {
+        timeLeft--;
+        timer.textContent = `残り時間: ${timeLeft}秒`;
+        if (timeLeft <= 0) {
+          clearInterval(timeoutId);
+          showResult("時間切れです！", true);
+        }
+      }, 1000);
+    }
+
+    function showResult(message, showCorrect = false) {
+      clearInterval(timeoutId);
+      const result = document.getElementById("result");
+      if (showCorrect) {
+        result.innerHTML = `${message} 正解は「${Math.max(m, n)}」でした。`;
+      } else {
+        result.textContent = message;
+      }
+
+      setTimeout(startQuestion, 3000);
+    }
+
+    document.getElementById("btn1").onclick = () => {
+      showResult(correctAnswer === "btn1" ? "正解！" : "不正解！", correctAnswer !== "btn1");
+    };
+    document.getElementById("btn2").onclick = () => {
+      showResult(correctAnswer === "btn2" ? "正解！" : "不正解！", correctAnswer !== "btn2");
+    };
+
+    startQuestion();
+  </script>
+</body>
+</html>
