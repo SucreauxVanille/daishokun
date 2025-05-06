@@ -18,33 +18,35 @@
   <div id="result"></div>
 
   <script>
-    let m, n;
-    let correctAnswer;
-    let timeoutId;
+let m, n, correctAnswer, timer, timeLeft;
+let correctStreak = 0;
 
-    function generateM() {
-      const a = Math.floor(Math.random() * 99) + 2; // 2〜100
-      const b = Math.floor(Math.random() * (a - 1)) + 1; // 1〜a-1
+function generateM() {
+  const a = Math.floor(Math.random() * 30) + 2;
+  const b = Math.floor(Math.random() * 30) + 2;
+  const operations = [
+    { text: `${a} + ${b}`, value: a + b },
+    { text: `${a} - ${b}`, value: Math.abs(a - b) || 1 },
+    { text: `${a} × ${b}`, value: a * b },
+    { text: `${a} ÷ ${b}`, value: Math.floor(a / b) || 1 }
+  ];
+  let op;
+  do {
+    op = operations[Math.floor(Math.random() * operations.length)];
+  } while (op.value <= 1 || op.value > 1000);
+  return op;
+}
 
-      const ops = [
-        { op: '+', value: a + b, expr: `${a} + ${b}` },
-        { op: '-', value: a - b, expr: `${a} - ${b}` },
-        { op: '×', value: a * b, expr: `${a} × ${b}` },
-        { op: '÷', value: Math.floor(a / b), expr: `${a} ÷ ${b}` }
-      ];
-
-      let validOps = ops.filter(o => o.value > 1 && o.value <= 1000);
-      const choice = validOps[Math.floor(Math.random() * validOps.length)];
-      return { value: choice.value, text: choice.expr };
-    }
-
-    function generateN() {
-      const x = Math.floor(Math.random() * 10) + 1;
-      return { value: 100 * x, text: `${100 * x}` };
-    }
+function generateN() {
+  const x = Math.floor(Math.random() * 10) + 1;
+  return { text: `${100 * x}`, value: 100 * x };
+}
 
 function startQuestion() {
   document.getElementById("result").textContent = "";
+  document.getElementById("nextButton").style.display = "none";
+
+  resetButtonColors();
   const maxAttempts = 100;
   let attempts = 0;
   let mObj, nObj;
@@ -52,9 +54,7 @@ function startQuestion() {
   while (attempts < maxAttempts) {
     mObj = generateM();
     nObj = generateN();
-    if (Math.abs(mObj.value - nObj.value) < 100 && mObj.value !== nObj.value) {
-      break;
-    }
+    if (Math.abs(mObj.value - nObj.value) < 100 && mObj.value !== nObj.value) break;
     attempts++;
   }
 
@@ -74,51 +74,85 @@ function startQuestion() {
   const btn1 = document.getElementById("btn1");
   const btn2 = document.getElementById("btn2");
 
-  btn1.style.display = "inline-block";
-  btn2.style.display = "inline-block";
   btn1.textContent = leftIsM ? mObj.text : nObj.text;
   btn2.textContent = leftIsM ? nObj.text : mObj.text;
 
   correctAnswer = m > n ? (leftIsM ? "btn1" : "btn2") : (leftIsM ? "btn2" : "btn1");
 
+  btn1.disabled = false;
+  btn2.disabled = false;
+
   startTimer();
 }
 
-    function startTimer() {
-      let timeLeft = 10;
-      const timer = document.getElementById("timer");
-      timer.textContent = `残り時間: ${timeLeft}秒`;
+function handleAnswer(selectedId) {
+  clearInterval(timer);
+  document.getElementById("btn1").disabled = true;
+  document.getElementById("btn2").disabled = true;
 
-      timeoutId = setInterval(() => {
-        timeLeft--;
-        timer.textContent = `残り時間: ${timeLeft}秒`;
-        if (timeLeft <= 0) {
-          clearInterval(timeoutId);
-          showResult("時間切れです！", true);
-        }
-      }, 1000);
+  const isCorrect = selectedId === correctAnswer;
+  const selectedBtn = document.getElementById(selectedId);
+  const otherBtn = document.getElementById(selectedId === "btn1" ? "btn2" : "btn1");
+
+  selectedBtn.style.backgroundColor = "deepskyblue";
+  if (isCorrect) {
+    document.getElementById("result").textContent = "正解！";
+    correctStreak++;
+  } else {
+    selectedBtn.style.backgroundColor = "lightgray";
+    otherBtn.style.backgroundColor = "deepskyblue";
+    document.getElementById("result").textContent = "不正解！";
+    correctStreak = 0;
+  }
+
+  updateStreakDisplay();
+  document.getElementById("nextButton").style.display = "inline-block";
+}
+
+function startTimer() {
+  timeLeft = 10;
+  document.getElementById("timer").textContent = `残り時間: ${timeLeft}秒`;
+  timer = setInterval(() => {
+    timeLeft--;
+    document.getElementById("timer").textContent = `残り時間: ${timeLeft}秒`;
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      handleTimeout();
     }
+  }, 1000);
+}
 
-    function showResult(message, showCorrect = false) {
-      clearInterval(timeoutId);
-      const result = document.getElementById("result");
-      if (showCorrect) {
-        result.innerHTML = `${message} 正解は「${Math.max(m, n)}」でした。`;
-      } else {
-        result.textContent = message;
-      }
+function handleTimeout() {
+  document.getElementById("btn1").disabled = true;
+  document.getElementById("btn2").disabled = true;
 
-      setTimeout(startQuestion, 3000);
-    }
+  document.getElementById(correctAnswer).style.backgroundColor = "deepskyblue";
+  document.getElementById("result").textContent = "時間切れです！";
 
-    document.getElementById("btn1").onclick = () => {
-      showResult(correctAnswer === "btn1" ? "正解！" : "不正解！", correctAnswer !== "btn1");
-    };
-    document.getElementById("btn2").onclick = () => {
-      showResult(correctAnswer === "btn2" ? "正解！" : "不正解！", correctAnswer !== "btn2");
-    };
+  correctStreak = 0;
+  updateStreakDisplay();
+  document.getElementById("nextButton").style.display = "inline-block";
+}
 
-    startQuestion();
+function resetButtonColors() {
+  const btn1 = document.getElementById("btn1");
+  const btn2 = document.getElementById("btn2");
+  btn1.style.backgroundColor = "";
+  btn2.style.backgroundColor = "";
+}
+
+function updateStreakDisplay() {
+  const streakDisplay = document.getElementById("streak");
+  if (correctStreak > 0) {
+    streakDisplay.textContent = `現在 ${correctStreak} 問連続正解中！`;
+  } else {
+    streakDisplay.textContent = "";
+  }
+}
+
   </script>
+<p id="streak" style="font-weight: bold; color: darkgreen; margin-top: 20px;"></p>
+<button id="nextButton" onclick="startQuestion()" style="display: none;">次に進む</button>
+
 </body>
 </html>
