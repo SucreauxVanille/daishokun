@@ -1,190 +1,175 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>大小君</title>
   <style>
-    body { font-family: sans-serif; text-align: center; margin: 2em; }
-    button { font-size: 1.5em; padding: 1em 2em; margin: 1em; }
+    body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+    button { font-size: 24px; margin: 20px; padding: 10px 20px; }
+    #message, #streak { margin-top: 20px; font-size: 24px; }
     .correct { background-color: lightgreen; }
-    .incorrect { background-color: lightcoral; }
-    .neutral { background-color: lightgray; }
-    #message { font-size: 1.2em; margin-top: 1em; }
-    #streak { font-size: 1.2em; color: blue; margin-top: 1em; }
-    #nextBtn { margin-top: 2em; font-size: 1em; padding: 0.5em 1.5em; }
-    #timer { font-size: 1.2em; margin-top: 1em; }
+    .wrong { background-color: lightcoral; }
+    .dimmed { background-color: lightgray; }
+    #timer { font-size: 20px; color: darkorange; margin-top: 10px; }
+    #nextBtn { display: none; margin-top: 20px; font-size: 20px; padding: 8px 16px; }
+    #streak { color: blue; }
   </style>
 </head>
 <body>
+
   <h1>大きいのはどっち？</h1>
   <div id="question"></div>
-  <button id="btn1"></button>
-  <button id="btn2"></button>
+  <div id="buttons"></div>
+  <div id="timer"></div>
   <div id="message"></div>
-  <div id="streak">現在0問連続正解中！</div>
-  <div id="timer">残り時間: 10秒</div>
-  <button id="nextBtn" style="display:none;">次に進む</button>
+  <div id="streak"></div>
+  <button id="nextBtn" onclick="startGame()">次に進む</button>
 
   <script>
-    const btn1 = document.getElementById('btn1');
-    const btn2 = document.getElementById('btn2');
-    const question = document.getElementById('question');
-    const message = document.getElementById('message');
-    const streakDisplay = document.getElementById('streak');
-    const nextBtn = document.getElementById('nextBtn');
-    const timerDisplay = document.getElementById('timer');
-
-    let m, n, correctAnswer;
+    let correctStreak = 0;
     let timer;
-    let countdownTimer;
-    let streak = 0;
-    let timeLeft = 10; // タイマーの初期時間（秒）
+    let countdown;
 
-    function generateM(maxTries = 20) {
-      for (let i = 0; i < maxTries; i++) {
-        let a = Math.floor(Math.random() * 199) + 2;  // 2〜200
-        let b = Math.floor(Math.random() * 149) + 2;   // 2〜100
-        if (b >= a) [a, b] = [b, a]; // a > b にする
+    function generateM() {
+      const operations = ['+', '-', '*', '/'];
+      const maxAttempts = 100;
+      let attempts = 0;
+      while (attempts < maxAttempts) {
+        let a = Math.floor(Math.random() * 200) + 1;
+        let b = Math.floor(Math.random() * 100) + 1;
+        if (a < b) [a, b] = [b, a]; // a >= b を保証
 
-        const operations = [
-          { text: `${a} + ${b}`, value: a + b },
-          { text: `${a} - ${b}`, value: a - b },
-          { text: `${a} × ${b}`, value: a * b },
-          { text: `${a} ÷ ${b}`, value: Math.floor(a / b) }
-        ];
+        let op = operations[Math.floor(Math.random() * operations.length)];
+        let val, expr;
 
-        const op = operations[Math.floor(Math.random() * operations.length)];
-        const mVal = op.value;
-
-        if (mVal > 1 && mVal <= 1000) {
-          return { text: op.text, value: mVal };
+        switch (op) {
+          case '+':
+            val = a + b;
+            expr = `${a} + ${b}`;
+            break;
+          case '-':
+            val = a - b;
+            if (val <= 0) break;
+            expr = `${a} - ${b}`;
+            break;
+          case '*':
+            val = a * b;
+            expr = `${a} × ${b}`;
+            break;
+          case '/':
+            if (b === 0 || a % b !== 0) break;
+            val = a / b;
+            expr = `${a} ÷ ${b}`;
+            break;
         }
+
+        if (val > 50 && val <= 1000) {
+          return { val, expr };
+        }
+        attempts++;
       }
-      return null; // 失敗時
+      return null; // 最大試行数に達した場合
     }
 
     function generateQuestion() {
-      const mObj = generateM();
-      if (!mObj) {
-        question.textContent = "問題の生成に失敗しました。ページを再読み込みしてください。";
-        btn1.style.display = btn2.style.display = nextBtn.style.display = 'none';
-        clearTimeout(timer);
-        clearInterval(countdownTimer); // タイマー停止
+      clearInterval(countdown);
+      document.getElementById("timer").textContent = "";
+      document.getElementById("message").textContent = "";
+      document.getElementById("streak").textContent = "";
+      document.getElementById("nextBtn").style.display = "none";
+
+      const mData = generateM();
+      if (!mData) {
+        document.getElementById("question").textContent = "問題の生成に失敗しました。ページを再読み込みしてください。";
+        document.getElementById("buttons").innerHTML = "";
         return;
       }
 
-      m = mObj.value;
-      const mText = mObj.text;
-      const x = Math.floor(Math.random() * 10) + 1; // 1〜10
-      n = 100 * x;
-
+      const m = mData.val;
+      let n = 100 * Math.floor(Math.random() * 10 + 1);
       if (Math.abs(m - n) >= 100 || m === n) {
-        return generateQuestion(); // 条件を満たさなければ再帰
+        let attempts = 0;
+        while ((Math.abs(m - n) >= 100 || m === n) && attempts < 50) {
+          n = 100 * Math.floor(Math.random() * 10 + 1);
+          attempts++;
+        }
       }
 
-      correctAnswer = m > n ? m : n;
-      question.textContent = "大きいのはどっち？";
+      const isMFirst = Math.random() < 0.5;
+      const left = isMFirst ? { val: m, label: mData.expr } : { val: n, label: n };
+      const right = isMFirst ? { val: n, label: n } : { val: m, label: mData.expr };
 
-      const leftFirst = Math.random() < 0.5;
-      if (leftFirst) {
-        btn1.textContent = mText;
-        btn2.textContent = n;
-        btn1.dataset.value = m;
-        btn2.dataset.value = n;
+      document.getElementById("question").textContent = "大きいのはどっち？";
+
+      document.getElementById("buttons").innerHTML = `
+        <button id="leftBtn">${left.label}</button>
+        <button id="rightBtn">${right.label}</button>
+      `;
+
+      document.getElementById("leftBtn").onclick = () => checkAnswer(left, right, "leftBtn", "rightBtn");
+      document.getElementById("rightBtn").onclick = () => checkAnswer(right, left, "rightBtn", "leftBtn");
+
+      startTimer(left, right, "leftBtn", "rightBtn");
+    }
+
+    function checkAnswer(selected, other, selectedId, otherId) {
+      clearInterval(countdown);
+      document.getElementById("leftBtn").disabled = true;
+      document.getElementById("rightBtn").disabled = true;
+
+      const selectedBtn = document.getElementById(selectedId);
+      const otherBtn = document.getElementById(otherId);
+
+      if (selected.val > other.val) {
+        selectedBtn.classList.add("correct");
+        correctStreak++;
+        document.getElementById("message").textContent = "正解！";
       } else {
-        btn1.textContent = n;
-        btn2.textContent = mText;
-        btn1.dataset.value = n;
-        btn2.dataset.value = m;
+        selectedBtn.classList.add("wrong");
+        selectedBtn.classList.add("dimmed");
+        otherBtn.classList.add("correct");
+        correctStreak = 0;
+        document.getElementById("message").textContent = "不正解！";
       }
 
-      resetStyles();
-      message.textContent = "";
-      nextBtn.style.display = "none";
-      timeLeft = 10;
-      updateTimerDisplay();
+      document.getElementById("streak").textContent = `現在 ${correctStreak} 問連続正解中！`;
+      document.getElementById("nextBtn").style.display = "inline-block";
+    }
 
-      // タイマーのカウントダウン開始
-      countdownTimer = setInterval(() => {
-        timeLeft--;
-        updateTimerDisplay();
+    function startTimer(left, right, leftId, rightId) {
+      let time = 10;
+      document.getElementById("timer").textContent = `残り時間: ${time} 秒`;
+      countdown = setInterval(() => {
+        time--;
+        if (time > 0) {
+          document.getElementById("timer").textContent = `残り時間: ${time} 秒`;
+        } else {
+          clearInterval(countdown);
+          document.getElementById("timer").textContent = "時間切れです！";
+          document.getElementById(leftId).disabled = true;
+          document.getElementById(rightId).disabled = true;
 
-        if (timeLeft <= 0) {
-          clearInterval(countdownTimer); // タイマーを停止
-          message.textContent = `時間切れです。正解は ${correctAnswer} です。`;
-          markCorrect();
-          streak = 0;
-          updateStreak();
-          nextBtn.style.display = "inline-block";
+          if (left.val > right.val) {
+            document.getElementById(leftId).classList.add("correct");
+            document.getElementById(rightId).classList.add("dimmed");
+          } else {
+            document.getElementById(rightId).classList.add("correct");
+            document.getElementById(leftId).classList.add("dimmed");
+          }
+
+          correctStreak = 0;
+          document.getElementById("message").textContent = `正解は「${Math.max(left.val, right.val)}」でした。`;
+          document.getElementById("streak").textContent = `現在 ${correctStreak} 問連続正解中！`;
+          document.getElementById("nextBtn").style.display = "inline-block";
         }
       }, 1000);
-
-      // 10秒後に自動で時間切れ処理
-      timer = setTimeout(() => {
-        clearInterval(countdownTimer); // タイマーを停止
-        message.textContent = `時間切れです。正解は ${correctAnswer} です。`;
-        markCorrect();
-        streak = 0;
-        updateStreak();
-        nextBtn.style.display = "inline-block";
-      }, 10000);
     }
 
-    function updateTimerDisplay() {
-      timerDisplay.textContent = `残り時間: ${timeLeft}秒`;
+    function startGame() {
+      generateQuestion();
     }
 
-    function handleAnswer(btn) {
-      clearTimeout(timer);
-      clearInterval(countdownTimer); // タイマーを停止
-      const selected = parseInt(btn.dataset.value);
-      const correct = selected === correctAnswer;
-      if (correct) {
-        message.textContent = "正解！";
-        btn.classList.add("correct");
-        streak++;
-      } else {
-        message.textContent = `不正解！`;
-        btn.classList.add("incorrect");
-        markCorrect();
-        streak = 0;
-      }
-      updateStreak();
-      disableButtons();
-      nextBtn.style.display = "inline-block";
-    }
-
-    function markCorrect() {
-      [btn1, btn2].forEach(b => {
-        if (parseInt(b.dataset.value) === correctAnswer) {
-          b.classList.add("correct");
-        } else {
-          b.classList.add("neutral");
-        }
-      });
-    }
-
-    function disableButtons() {
-      btn1.disabled = true;
-      btn2.disabled = true;
-    }
-
-    function resetStyles() {
-      [btn1, btn2].forEach(b => {
-        b.disabled = false;
-        b.className = "";
-      });
-    }
-
-    function updateStreak() {
-      streakDisplay.textContent = `現在${streak}問連続正解中！`;
-    }
-
-    btn1.addEventListener("click", () => handleAnswer(btn1));
-    btn2.addEventListener("click", () => handleAnswer(btn2));
-    nextBtn.addEventListener("click", generateQuestion);
-
-    generateQuestion();
+    window.onload = startGame;
   </script>
 </body>
 </html>
