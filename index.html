@@ -43,7 +43,7 @@
     function generateM(maxTries = 20) {
       for (let i = 0; i < maxTries; i++) {
         let a = Math.floor(Math.random() * 199) + 2;  // 2〜200
-        let b = Math.floor(Math.random() * 99) + 2;   // 2〜100
+        let b = Math.floor(Math.random() * 149) + 2;   // 2〜100
         if (b >= a) [a, b] = [b, a]; // a > b にする
 
         const operations = [
@@ -144,7 +144,7 @@
         btn.classList.add("correct");
         streak++;
       } else {
-        message.textContent = `不正解。正解は ${correctAnswer} です。`;
+        message.textContent = `不正解！`;
         btn.classList.add("incorrect");
         markCorrect();
         streak = 0;
