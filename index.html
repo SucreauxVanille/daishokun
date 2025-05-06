@@ -73,8 +73,8 @@
     let correctStreak = 0;
 
     function generateM() {
-      const a = Math.floor(Math.random() * 100) + 2;
-      const b = Math.floor(Math.random() * 50) + 2;
+      const a = Math.floor(Math.random() * 200) + 2;
+      const b = Math.floor(Math.random() * 100) + 2;
       const operations = [
         { text: `${a} + ${b}`, value: a + b },
         { text: `${a} - ${b}`, value: Math.abs(a - b) || 1 },
@@ -89,8 +89,8 @@
     }
 
     function generateN() {
-      const x = Math.floor(Math.random() * 10) + 1;
-      return { text: `${100 * x}`, value: 100 * x };
+      const x = Math.floor(Math.random() * 20) + 1;
+      return { text: `${100 * x}`, value: 50 * x };
     }
 
     function startQuestion() {
