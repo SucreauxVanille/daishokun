@@ -99,8 +99,6 @@
       const left = isMFirst ? { val: m, label: mData.expr } : { val: n, label: n };
       const right = isMFirst ? { val: n, label: n } : { val: m, label: mData.expr };
 
-      document.getElementById("question").textContent = "大きいのはどっち？";
-
       document.getElementById("buttons").innerHTML = `
         <button id="leftBtn">${left.label}</button>
         <button id="rightBtn">${right.label}</button>
