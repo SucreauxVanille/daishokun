@@ -73,8 +73,8 @@
     let correctStreak = 0;
 
     function generateM() {
-      const a = Math.floor(Math.random() * 30) + 2;
-      const b = Math.floor(Math.random() * 30) + 2;
+      const a = Math.floor(Math.random() * 100) + 2;
+      const b = Math.floor(Math.random() * 50) + 2;
       const operations = [
         { text: `${a} + ${b}`, value: a + b },
         { text: `${a} - ${b}`, value: Math.abs(a - b) || 1 },
