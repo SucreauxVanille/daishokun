@@ -35,8 +35,8 @@
       const maxAttempts = 100;
       let attempts = 0;
       while (attempts < maxAttempts) {
-        let a = Math.floor(Math.random() * 200) + 1;
-        let b = Math.floor(Math.random() * 100) + 1;
+        let a = Math.floor(Math.random() * 200) + 2;
+        let b = Math.floor(Math.random() * 100) + 2;
         if (a < b) [a, b] = [b, a]; // a >= b を保証
 
         let op = operations[Math.floor(Math.random() * operations.length)];
