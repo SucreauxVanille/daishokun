@@ -110,58 +110,67 @@
       startTimer(left, right, "leftBtn", "rightBtn");
     }
 
-    function checkAnswer(selected, other, selectedId, otherId) {
+function checkAnswer(selected, other, selectedId, otherId) {
+  clearInterval(countdown);
+  document.getElementById("leftBtn").disabled = true;
+  document.getElementById("rightBtn").disabled = true;
+
+  const selectedBtn = document.getElementById(selectedId);
+  const otherBtn = document.getElementById(otherId);
+
+  if (selected.val > other.val) {
+    selectedBtn.classList.add("correct");
+    correctStreak++;
+    document.getElementById("message").textContent = "正解！";
+
+    // ★ 5連続正解達成時にメッセージ表示（1回だけ）
+    if (correctStreak === 5) {
+      document.getElementById("message").textContent += " ここからはスピードアップするよ！";
+    }
+
+  } else {
+    selectedBtn.classList.add("wrong");
+    selectedBtn.classList.add("dimmed");
+    otherBtn.classList.add("correct");
+    correctStreak = 0;
+    document.getElementById("message").textContent = "不正解！";
+  }
+
+  document.getElementById("streak").textContent = `現在 ${correctStreak} 問連続正解中！`;
+  document.getElementById("nextBtn").style.display = "inline-block";
+}
+
+
+function startTimer(left, right, leftId, rightId) {
+  let time = correctStreak > 5 ? 5 : 10;  // ★ 6問目以降は5秒に短縮
+  document.getElementById("timer").textContent = `残り時間: ${time} 秒`;
+
+  countdown = setInterval(() => {
+    time--;
+    if (time > 0) {
+      document.getElementById("timer").textContent = `残り時間: ${time} 秒`;
+    } else {
       clearInterval(countdown);
-      document.getElementById("leftBtn").disabled = true;
-      document.getElementById("rightBtn").disabled = true;
+      document.getElementById("timer").textContent = "時間切れです！";
+      document.getElementById(leftId).disabled = true;
+      document.getElementById(rightId).disabled = true;
 
-      const selectedBtn = document.getElementById(selectedId);
-      const otherBtn = document.getElementById(otherId);
-
-      if (selected.val > other.val) {
-        selectedBtn.classList.add("correct");
-        correctStreak++;
-        document.getElementById("message").textContent = "正解！";
+      if (left.val > right.val) {
+        document.getElementById(leftId).classList.add("correct");
+        document.getElementById(rightId).classList.add("dimmed");
       } else {
-        selectedBtn.classList.add("wrong");
-        selectedBtn.classList.add("dimmed");
-        otherBtn.classList.add("correct");
-        correctStreak = 0;
-        document.getElementById("message").textContent = "不正解！";
+        document.getElementById(rightId).classList.add("correct");
+        document.getElementById(leftId).classList.add("dimmed");
       }
 
+      correctStreak = 0;
+      document.getElementById("message").textContent = `正解は「${Math.max(left.val, right.val)}」でした。`;
       document.getElementById("streak").textContent = `現在 ${correctStreak} 問連続正解中！`;
       document.getElementById("nextBtn").style.display = "inline-block";
     }
+  }, 1000);
+}
 
-    function startTimer(left, right, leftId, rightId) {
-      let time = 10;
-      document.getElementById("timer").textContent = `残り時間: ${time} 秒`;
-      countdown = setInterval(() => {
-        time--;
-        if (time > 0) {
-          document.getElementById("timer").textContent = `残り時間: ${time} 秒`;
-        } else {
-          clearInterval(countdown);
-          document.getElementById("timer").textContent = "時間切れです！";
-          document.getElementById(leftId).disabled = true;
-          document.getElementById(rightId).disabled = true;
-
-          if (left.val > right.val) {
-            document.getElementById(leftId).classList.add("correct");
-            document.getElementById(rightId).classList.add("dimmed");
-          } else {
-            document.getElementById(rightId).classList.add("correct");
-            document.getElementById(leftId).classList.add("dimmed");
-          }
-
-          correctStreak = 0;
-          document.getElementById("message").textContent = `正解は「${Math.max(left.val, right.val)}」でした。`;
-          document.getElementById("streak").textContent = `現在 ${correctStreak} 問連続正解中！`;
-          document.getElementById("nextBtn").style.display = "inline-block";
-        }
-      }, 1000);
-    }
 
     function startGame() {
       generateQuestion();
